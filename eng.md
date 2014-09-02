@@ -1,6 +1,10 @@
 # Detect if a Function is Native Code with JavaScript
 
-Every once a while I'll test if a given function is native code -- it's an important part of feature testing whether a function was provided by the browser or via a third party shim which acts like the native feature. The best way to detect this, of course, is evaluating the `toString` return value of the function.
+Every once a while I'll test if a given function is native code -- it's an
+important part of feature testing whether a function was provided by the browser
+or via a third party shim which acts like the native feature. The best way to
+detect this, of course, is evaluating the `toString` return value of the
+function.
 
 ## The JavaScript
 
@@ -10,7 +14,10 @@ The code to accomplish this task is fairly basic:
         return (/\{\s*\[native code\]\s*\}/).test('' + fn);
     }
 
-Converting to the string representation of the function and performing a regex match on the string is how it's done. <span style="text-decoration: =line-through;">There isn't a better way of confirming a function is native code!</span>
+Converting to the string representation of the function and performing a regex
+match on the string is how it's done. <span style="text-decoration: =line-
+through;">There isn't a better way of confirming a function is native
+code!</span>
 
 ## Update!
 
@@ -56,6 +63,8 @@ Lodash creator John-David Dalton has provided a [better solution][1]:
       module.exports = isNative;
     }());
 
-So there you have it -- a better solution for detecting if a method is native. Of course you shouldn't use this as a form of security -- it's only to hint toward native support!
+So there you have it -- a better solution for detecting if a method is native.
+Of course you shouldn't use this as a form of security -- it's only to hint
+toward native support!
 
 [1]: https://gist.github.com/jdalton/5e34d890105aca44399f
