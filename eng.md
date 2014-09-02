@@ -1,51 +1,61 @@
-<main id="main"><article>
-Every once a while I'll test is a given function is native code -- it's an
-important part of feature testing whether a function was provided by the browser
-or via a third party shim which acts like the native feature.  The best way to 
-detect this, of course, is evaluating the toString return value of the function.
+# Detect if a Function is Native Code with JavaScript
+
+Every once a while I'll test if a given function is native code -- it's an important part of feature testing whether a function was provided by the browser or via a third party shim which acts like the native feature. The best way to detect this, of course, is evaluating the `toString` return value of the function.
 
 ## The JavaScript
 
 The code to accomplish this task is fairly basic:
 
     function isNative(fn) {
-    	return (/\{\s*\[native code\]\s*\}/).test('' + fn);
+        return (/\{\s*\[native code\]\s*\}/).test('' + fn);
     }
-    
 
-Converting to the string representation of the function and performing a regex
-match on the string is how it's done.  There isn't a better way of confirming a 
-function is native code!</article>
+Converting to the string representation of the function and performing a regex match on the string is how it's done. <span style="text-decoration: =line-through;">There isn't a better way of confirming a function is native code!</span>
 
-![ydkjs-2.png][1]
+## Update!
 
-## [Recent Features**][2]
+Lodash creator John-David Dalton has provided a [better solution][1]:
 
-*   ![Create a Sheen Logo Effect with&nbsp;CSS][3]
-*   ![Vibration&nbsp;API][3]### [Vibration API][4]
-    
-    Many of the new APIs provided to us by browser vendors are more targeted
-    toward the mobile user than the desktop user.  One of those simple APIs the
-   [Vibration API][5].  The Vibration API allows developers to direct the
-    device, using JavaScript, to vibrate in.
-    ..
+    ;(function() {
 
-## [Incredible Demos**][6]
+      // Used to resolve the internal `[[Class]]` of values
+      var toString = Object.prototype.toString;
+  
+      // Used to resolve the decompiled source of functions
+      var fnToString = Function.prototype.toString;
+  
+      // Used to detect host constructors (Safari > 4; really typed array specific)
+      var reHostCtor = /^\[object .+?Constructor\]$/;
 
-*   ![MooTools History&nbsp;Plugin][3]### [MooTools History Plugin][7]
-    
-    One of the reasons I love AJAX technology so much is because it allows us
-    to avoid unnecessary page loads.  Why download the header, footer, and other 
-    static data multiple times if that specific data never changes?  It's a waste of
-    time, processing, and bandwidth.  Unfortunately,
-    ...
+      // Compile a regexp using a common native method as a template.
+      // We chose `Object#toString` because there's a good chance it is not being mucked with.
+      var reNative = RegExp('^' +
+        // Coerce `Object#toString` to a string
+        String(toString)
+        // Escape any special regexp characters
+        .replace(/[.*+?^${}()|[\]\/\\]/g, '\\$&')
+        // Replace mentions of `toString` with `.*?` to keep the template generic.
+        // Replace thing like `for ...` to support environments like Rhino which add extra info
+        // such as method arity.
+        .replace(/toString|(function).*?(?=\\\()| for .+?(?=\\\])/g, '$1.*?') + '$'
+      );
+  
+      function isNative(value) {
+        var type = typeof value;
+        return type == 'function'
+          // Use `Function#toString` to bypass the value's own `toString` method
+          // and avoid being faked out.
+          ? reNative.test(fnToString.call(value))
+          // Fallback to a host object check because some environments will represent
+          // things like typed arrays as DOM methods which may not conform to the
+          // normal native pattern.
+          : (value && type == 'object' && reHostCtor.test(toString.call(value))) || false;
+      }
+  
+      // export however you want
+      module.exports = isNative;
+    }());
 
-*   ![AJAX Page Loads Using MooTools&nbsp;Fx.Explode][3]</main>
+So there you have it -- a better solution for detecting if a method is native. Of course you shouldn't use this as a form of security -- it's only to hint toward native support!
 
- [1]: img/ydkjs-2.png
- [2]: http://davidwalsh.name/tutorials/features
- [3]: img/
- [4]: http://davidwalsh.name/vibration-api
- [5]: http://www.w3.org/TR/vibration/
- [6]: http://davidwalsh.name/tutorials/demos
- [7]: http://davidwalsh.name/mootools-history
+[1]: https://gist.github.com/jdalton/5e34d890105aca44399f
